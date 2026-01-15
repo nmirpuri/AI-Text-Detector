@@ -1,8 +1,18 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import pipeline
 
 app = FastAPI()
+
+# ✅ ADD THIS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all origins (OK for local dev)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 detector = pipeline(
     "text-classification",
@@ -17,11 +27,7 @@ class TextRequest(BaseModel):
 def analyze_text(request: TextRequest):
     result = detector(request.text)[0]
 
-    label = result["label"]
-    score = round(result["score"] * 100, 2)
-
     return {
-        "prediction": label,
-        "confidence": f"{score}%",
-        "note": "AI detection is probabilistic, not definitive."
+        "prediction": result["label"],
+        "confidence": f"{round(result['score'] * 100, 2)}%"
     }
